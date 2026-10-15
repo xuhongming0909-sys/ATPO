@@ -1,0 +1,48 @@
+# 自动打新系统配置（非敏感项）
+# 敏感信息（SendKey、服务器凭据）→ config/secrets.yaml（git 忽略）
+# 券商密码 → 永不放这里，只存本机执行端加密存储
+
+project: auto_ipo
+
+# 账户元数据（不含任何密码）；permissions 待用户核实后填写
+accounts:
+  - id: pingan_main
+    broker: 平安证券
+    enabled: true
+    permissions: []        # 可选: cb(可转债) sh_ipo sz_ipo cyb(创业板) kcb(科创板) bj(北交所)
+    strategy: all          # all = 全部顶格申购
+  # - id: huabao_main
+  #   broker: 华宝证券
+  #   enabled: false
+  #   permissions: []
+  #   strategy: all
+  # - id: csc_main
+  #   broker: 中信建投
+  #   enabled: false
+  #   permissions: []
+  #   strategy: all
+
+strategy:
+  new_stock: all           # 新股全部申购（用户已确认）
+  convertible_bond: all    # 可转债全部申购
+  blacklist: []            # 预留：按代码排除标的
+
+schedule:
+  calendar_fetch: "08:30"  # 拉取当日打新日历
+  subscribe_time: "09:35"  # 触发申购（T 日）
+  allotment_check_1: "21:00"  # T+1 晚查中签
+  allotment_check_2: "08:00"  # T+2 早补查
+
+notification:
+  channels: [serverchan]   # Server酱 SendKey 在 secrets.yaml
+  email_fallback: false    # 中签等关键消息的兜底通道，M4 再开
+
+execution:
+  mode: dry_run            # dry_run | live；实盘必须显式改 live 并经用户确认
+  poll_interval_sec: 60    # 执行端轮询服务器任务间隔
+
+server:
+  host: "43.139.35.190"
+  app_dir: "/home/ubuntu/auto-ipo"
+  service_name: "auto-ipo"
+  api_port: 8100           # 任务 API（仅本机执行端访问，安全组限制来源）

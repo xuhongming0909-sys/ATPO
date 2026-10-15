@@ -1,0 +1,17 @@
+# 敏感信息
+config/secrets.yaml
+.env
+
+# 运行时
+runtime_data/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 系统
+Thumbs.db
+.DS_Store
