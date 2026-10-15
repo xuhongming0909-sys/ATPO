@@ -36,6 +36,7 @@ schedule:
 notification:
   channels: [serverchan]   # Server酱 SendKey 在 secrets.yaml
   email_fallback: false    # 中签等关键消息的兜底通道，M4 再开
+  skip_push_when_empty: true  # 当日无可申购标的（含节假日）时不推送
 
 execution:
   mode: dry_run            # dry_run | live；实盘必须显式改 live 并经用户确认

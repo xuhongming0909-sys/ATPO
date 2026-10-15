@@ -8,8 +8,8 @@
 |---|---|
 | `specs/requirements.md` | 需求与总体架构（业务目标、权限前置、时间节点、架构、里程碑） |
 | `specs/security.md` | 安全规格（凭据存储、实盘开关、留痕要求）— 待建 |
-| `specs/calendar.md` | 打新日历数据源与字段规格 — M1 建 |
-| `specs/notification.md` | 通知通道与消息格式规格 — M1 建 |
+| `specs/calendar.md` | 打新日历数据源与字段规格 | ✅ |
+| `specs/notification.md` | 通知通道与消息格式规格 | ✅ |
 
 ## 全局规则摘要
 

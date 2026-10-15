@@ -38,9 +38,12 @@
 
 | 文件 | 一句话职责 |
 |---|---|
-| `run.py` | CLI 统一入口（calendar / notify-test / subscribe / check-allotment） |
-
-（随代码落地持续登记）
+| `run.py` | CLI 统一入口（calendar / notify-test / daily-report） |
+| `shared/config.py` | 加载 config.yaml 与 secrets.yaml 的统一入口 |
+| `data_fetch/calendar.py` | 东财打新日历抓取与规范化（新股+可转债） |
+| `notification/serverchan.py` | Server酱推送封装 |
+| `scheduler/jobs.py` | 每日日历任务编排与消息格式化 |
+| `deploy/sync_server.sh` | 服务器端手动同步兜底脚本 |
 
 ## 4. 服务器档案
 
