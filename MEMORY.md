@@ -6,6 +6,13 @@
 
 ## Entries
 
+### 2026-10-15 | 通道与服务器验证通过 + 纯服务器方案评估
+
+- **Verified**: Server酱推送实测成功（pushid 61781931，errno 0）；SendKey 已存 config/secrets.yaml（git 忽略）。
+- **Verified**: SSH 到 43.139.35.190 成功（paramiko 密码认证，本机无 sshpass）。服务器状态：运行 140 天，alpha-monitor active，磁盘余 25G，内存余 2.5G，Python 3.12.3。SSH 凭据已存 secrets.yaml。
+- **Decision**: 纯服务器方案存在——S1 券商官方预约打新（平安/中信建投 APP 内有智能打新，券商端执行，零机器开机）；S2 Windows 云服务器跑 easytrader（月费百元级）。推荐 S1 为主路径，execution/ 降级为可选增强。待用户拍板 S1 vs S2。
+- **Next**: M1 每日打新提醒机器人开工（两条路径通用）；用户需在平安证券 APP 确认可转债权限 + 体验预约打新功能。
+
 ### 2026-10-15 | 项目立项：需求与架构 v2 定稿
 
 - **Decision**: 形态定为「服务器+本机执行端」混合架构。服务器（腾讯云 43.139.35.190 Ubuntu）跑日历/调度/通知；券商客户端自动化只在本机 Windows 跑，密码不上服务器。
