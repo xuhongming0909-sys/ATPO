@@ -1,7 +1,7 @@
-# Assistant Rules
+﻿# Assistant Rules
 
 Owner: user. AI must not modify this file without user's explicit approval.
-本项目采用「服务器 + 本地执行端」混合架构：服务器跑调度/日历/通知，券商客户端自动化只在本机 Windows 执行端跑。
+本项目完全本机运行（Windows）：日历抓取、调度、券商客户端自动化、通知推送全部在本机完成，无服务器、无强制 git 工作流。
 
 永远保持诚实，数据要准确无误。
 
@@ -14,22 +14,14 @@ Owner: user. AI must not modify this file without user's explicit approval.
 
 # Workflow
 
-## Sync Workflow（最高优先级）
+## Local Workflow（最高优先级）
 
-**本地是唯一真实源。所有变更必须经过 git 同步到服务器。**
+**本项目完全本机运行，无服务器、无强制 git 同步。**
 
-1. **本地优先**：所有代码修改、配置变更在本地完成并验证。
-2. **任务完成后同步**：每个任务验证通过后，执行 git commit + push。
-3. **服务器自动拉取**：服务器通过 `deploy/sync_server.sh` 从 git 拉取最新代码并重启服务（systemd: `auto-ipo`）。
-4. **禁止直接在服务器上改代码**：服务器上的任何手动修改都会被下次同步覆盖。
-5. **同步验证**：push 后检查服务器是否成功拉取（git log --oneline -3 对比本地）。
-
-流程：
-```
-本地修改 → 验证通过 → git add/commit → git push → 服务器 pull + restart
-```
-
-例外：`execution/`（券商客户端自动化）只部署到本机 Windows 执行端，不上服务器。
+1. 所有代码修改、配置变更、运行验证都在本机完成。
+2. 定时调度使用 Windows 任务计划程序（`schtasks`），不用 cron/systemd。
+3. 本地 git 仓库仅作历史留痕，可提交，但不作为强制工作流。
+4. 券商密码等敏感信息只存本机，任何情况下不外传（见 Constitution §9）。
 
 ## Read Order
 
@@ -37,11 +29,12 @@ Owner: user. AI must not modify this file without user's explicit approval.
 
 1. 本文件（`AGENTS.md`）
 2. `INDEX.md`（项目架构与文件索引）
-3. `README.md`
-4. `specs/spec.md`
-5. 相关 `specs/*.md`
-6. `config/config.yaml`
-7. `MEMORY.md` 最新条目
+3. `逻辑图.MD`（顶层目标-判定-链路控制图；代码改动影响链路/判定/不变量时必须同步）
+4. `README.md`
+5. `specs/spec.md`
+6. 相关 `specs/*.md`
+7. `config/config.yaml`
+8. `MEMORY.md` 最新条目
 
 ## Formal Spec Rules
 
@@ -70,8 +63,8 @@ Owner: user. AI must not modify this file without user's explicit approval.
 ## Config Rules
 
 - 非敏感配置只放 `config/config.yaml`。
-- 敏感信息只放 `config/secrets.yaml`（git 忽略）。
-- **券商资金账号密码永不进入 config/**：只存于本机 Windows 执行端的加密存储（见 specs/security.md）。
+- 凭据只放 `config/secrets.yaml`（git 忽略）：SendKey 明文可放；**券商交易密码只能以 DPAPI 密文（password_enc）存放**，明文永不落盘。
+- 本项目仅用户本人本机使用。THS 用户名、券商显示名、资金账号/尾号等普通账户识别信息可以进入本机日志、运行时结果和 Server酱推送，用于准确识别账户。
 - 配置键统一 `snake_case`。
 - markdown 文档中不得出现真实密钥或密码。
 
@@ -83,14 +76,15 @@ Owner: user. AI must not modify this file without user's explicit approval.
 - 需求变更时先同步正式 specs。
 - 新建/移动文件时更新 `INDEX.md`。
 - 模块职责变化时同时更新模块 spec 和 `INDEX.md`。
+- 代码改动改变目标链路、判定条件或不变量时，同步更新 `逻辑图.MD`（按其 §8 对照表逐节核对）。
 
 ## File Rules
 
 ### 根目录清洁
 
 根目录只允许：
-- **白名单文件**：README.md, AGENTS.md, INDEX.md, MEMORY.md, requirements.txt, run.py, .gitignore, .env.example, .editorconfig
-- **允许的目录**：config, specs, missions, templates, shared, data_fetch, execution, notification, scheduler, deploy, tests, runtime_data, archive, docs
+- **白名单文件**：README.md, AGENTS.md, INDEX.md, MEMORY.md, 逻辑图.MD, requirements.txt, run.py, .gitignore, .env.example, .editorconfig
+- **允许的目录**：config, specs, missions, templates, shared, data_fetch, execution, notification, scheduler, webui, tests, runtime_data, archive, docs
 - **禁止**在根目录放临时文件（截图、调试脚本、日志）
 
 临时文件规则：
@@ -161,8 +155,9 @@ REFACTOR → 重构消除重复
 
 ## 9. Security First（本项目特有，不可违背）
 
-- 券商资金账号、交易密码、SendKey 等**永不进 git、永不进日志、永不进推送消息正文**。
-- 券商密码只存本机 Windows 执行端（DPAPI 加密），**不上服务器**。
+- 本项目仅用户本人本机使用。THS 用户名、券商显示名、资金账号、资金账号尾号等普通账户识别信息可以进入本机日志、运行时结果和 Server酱推送，必须足以定位具体账户。
+- 交易密码、验证码、SendKey、token、DPAPI 密文等凭据**永不进 git、永不进日志、永不进推送消息正文**。
+- 券商交易密码以 DPAPI 密文存 `config/secrets.yaml`（绑定本机当前 Windows 用户，他机/他人解不开），由 `shared/credstore.py` 加解密；表单密码框留空=保持不变。
 - `execution.mode` 默认 `dry_run`；实盘交易必须在 config 显式改为 `live` 且经用户确认。
 - 每次实盘申购/查询操作必须留痕：操作日志 + 客户端截图存档到 `runtime_data/`。
 - 本工具仅限自用，禁止扩展为面向他人的代操作服务。

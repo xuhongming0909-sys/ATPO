@@ -4,24 +4,104 @@
 
 project: auto_ipo
 
-# 账户元数据（不含任何密码）；permissions 待用户核实后填写
+# 账户元数据（不含任何密码）；ID 即备注名（可中文，推送消息会带上）
+# permissions 勾选才打对应市场；沪深主板新股无需权限，以券商柜台额度为准
+# 2026-10-15 已与客户端已登录账户对齐（资金账号见 secrets.yaml）；已登录账户切换不需要密码
+# menu_row 仅为历史坐标缓存，运行时按账户名称动态匹配；不需要人工维护
 accounts:
-  - id: pingan_main
-    broker: 平安证券
-    enabled: true
-    permissions: []        # 可选: cb(可转债) sh_ipo sz_ipo cyb(创业板) kcb(科创板) bj(北交所)
-    strategy: all          # all = 全部顶格申购
-  # - id: huabao_main
-  #   broker: 华宝证券
-  #   enabled: false
-  #   permissions: []
-  #   strategy: all
-  # - id: csc_main
-  #   broker: 中信建投
-  #   enabled: false
-  #   permissions: []
-  #   strategy: all
-
+- id: 许*鸣
+  broker: 中信建投
+  account_type: credit
+  enabled: true
+  permissions:
+  - cb
+  - cyb
+  - kcb
+  - bj
+  strategy: all
+- id: 张*龙
+  broker: 平安证券
+  account_type: normal
+  enabled: true
+  permissions: [cb]
+  strategy: all
+- id: 揭*
+  broker: 平安证券
+  account_type: normal
+  enabled: true
+  permissions: [cb]
+  strategy: all
+- id: 蔡*良
+  broker: 华宝证券
+  account_type: normal
+  enabled: true
+  permissions: [cb]
+  strategy: all
+- id: 陈*燕
+  broker: 平安证券
+  account_type: normal
+  enabled: true
+  permissions: [cb]
+  strategy: all
+- id: 许*峰
+  broker: 平安证券
+  account_type: normal
+  enabled: true
+  permissions: [cb]
+  strategy: all
+- id: 陈*凯
+  broker: 平安证券
+  account_type: normal
+  enabled: true
+  permissions: [cb]
+  strategy: all
+- id: 程*宇
+  broker: 平安证券
+  account_type: normal
+  enabled: true
+  permissions: [cb]
+  strategy: all
+- id: 刘*豪
+  broker: 平安证券
+  account_type: normal
+  enabled: true
+  permissions: [cb]
+  strategy: all
+- id: 徐*正
+  broker: 平安证券
+  account_type: normal
+  enabled: true
+  permissions: [cb]
+  strategy: all
+# 账户按客户端动态匹配；未配置/未确认的账户不执行
+- id: 吴志聪PA
+  display_name: 平安证券-吴*聪
+  broker: 平安证券
+  account_type: normal
+  enabled: true
+  permissions: [cb]
+  strategy: all
+- id: 许鸿鸣HB
+  broker: 华宝证券
+  account_type: normal
+  enabled: false
+  permissions: [cb, cyb]
+  strategy: all
+# THS2 已发现但尚未录入资金账号/权限确认；先停用，补齐 secrets 后再启用
+- id: 刘*伟
+  display_name: 平安证券-刘*伟
+  broker: 平安证券
+  account_type: normal
+  enabled: false
+  permissions: [cb]
+  strategy: all
+- id: 余*彬
+  display_name: 平安证券-余*彬
+  broker: 平安证券
+  account_type: normal
+  enabled: false
+  permissions: [cb]
+  strategy: all
 strategy:
   new_stock: all           # 新股全部申购（用户已确认）
   convertible_bond: all    # 可转债全部申购
@@ -29,8 +109,9 @@ strategy:
 
 schedule:
   calendar_fetch: "08:30"  # 拉取当日打新日历
-  subscribe_time: "09:35"  # 触发申购（T 日）
-  allotment_check_1: "21:00"  # T+1 晚查中签
+  subscribe_time: "10:00"  # 触发申购（T 日，用户拍板 10:00）
+  subscribe_window: ["09:30", "15:00"]  # live 允许提交的当日时段
+  allotment_check_1: "22:00"  # T+1 晚查中签
   allotment_check_2: "08:00"  # T+2 早补查
 
 notification:
@@ -39,11 +120,88 @@ notification:
   skip_push_when_empty: true  # 当日无可申购标的（含节假日）时不推送
 
 execution:
-  mode: dry_run            # dry_run | live；实盘必须显式改 live 并经用户确认
-  poll_interval_sec: 60    # 执行端轮询服务器任务间隔
+  mode: live               # dry_run | live；实盘必须显式改 live 并经用户确认（2026-10-15 用户拍板切 live）
+  ths_account_switch:
 
-server:
-  host: "43.139.35.190"
-  app_dir: "/home/ubuntu/auto-ipo"
-  service_name: "auto-ipo"
-  api_port: 8100           # 任务 API（仅本机执行端访问，安全组限制来源）
+    hexin_path: 'E:\同花顺\同花顺\hexin.exe'
+    xiadan_path: 'E:\同花顺\同花顺\xiadan.exe'
+    max_ths_accounts: 10
+    max_fund_accounts_per_ths: 10
+    accounts:
+      - username: mx_525378109
+        enabled: true
+      - username: mx_mbqdpecj9
+        enabled: true
+# GUI 参数集中区：登录链路代码不散落长期硬编码坐标、阈值、等待时长
+gui:
+  ths_account_switch:
+    dialog_wait_s: 2
+    switch_account_control_id: 20199
+    cancel_control_id: 20149
+    exit_control_id: 21042
+    username_ocr_x_ratio: 0.65
+    username_ocr_top_px: 36
+    username_ocr_min_score: 0.78
+    username_ocr_min_margin: 0.12
+    restart_timeout_s: 60
+    login_wait_s: 60
+    login_click_verify_wait_s: 0.5
+    saved_password_checkbox_text: 保存密码
+    per_fund_timeout_s: 25   # 单资金户登录硬限时（秒）：健康登录11-26s，25s以下判失败防误杀
+    fund_total_timeout_s: 45 # 单资金户整体硬限时（秒）：登录+申购+核验全部做完的上限
+    fund_login_result_wait_s: 15
+    fund_login_poll_interval_s: 0.5
+    post_dialog_result_wait_s: 5
+    post_dialog_poll_interval_s: 0.5
+    dropdown_attempts: 3
+    screenshot_on_failure: true
+  xiadan:
+    fund_account_control_id: 1711
+    account_combo_control_id: 2322
+  hexin_login:
+    button_template: runtime_data/tpl_account_btn.png
+    button_threshold: 0.8
+    button_band_height: 30
+    button_click_dx: 8
+    button_click_dy: 10
+    button_attempts: 3
+    menu_wait_s: 5
+    allow_coordinate_fallback: true   # 文本不可读时按实测菜单行点击；每行必须做账户身份复核
+    row_height: 26
+    row_first_offset: 19
+    row_x_offset: 116
+    login_wait_s: 15
+    post_click_wait_s: 1.5
+    dropdown_attempts: 5
+    dropdown_wait_s: 2
+    menu_read_attempts: 3
+    menu_read_retry_wait_s: 0.2
+    max_accounts: 10
+    close_login_dialog: true
+    login_dialog_title: 委托下单
+    login_dialog_keywords: [资金账号, 资金帐号, 交易密码, 验证码]
+    dialog_close_wait_s: 0.5
+
+  lifecycle:
+    close_after_task: true
+    close_preexisting: true    # 任务结束温和关闭已占用客户端；关闭失败必须报告，不强杀
+    close_timeout_s: 15
+
+# 开机自动登录（AutoIPO-BootLogin 计划任务，登录触发+脚本内等网络就绪）
+boot_login:
+  max_accounts: 10         # 由当前客户端菜单动态选择，单实例容量约 10；不按券商/账户硬编码
+  probe_url: "http://www.baidu.com"  # 网络探活地址：收到 HTTP 应答（含4xx/5xx）即算联网
+  network_timeout_s: 600   # 等网络就绪上限，超时放弃本次（后续订阅/查签任务会再拉起客户端）
+
+catchup:
+  enabled: true
+  subscribe_skip_after: "15:00"
+  allotment_retry_interval_min: 30
+  allotment_keep_days: 3
+
+notification_receipts:
+  template_version: 2
+  send_login: true
+  send_subscribe: true
+  send_allotment: true
+

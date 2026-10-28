@@ -10,6 +10,10 @@ runtime_data/
 __pycache__/
 *.pyc
 .venv/
+.venv32/
+.venv-test/
+python311-32/
+.pytest_cache/
 venv/
 
 # 系统

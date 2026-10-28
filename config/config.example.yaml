@@ -1,0 +1,104 @@
+# 自动打新系统配置模板（非敏感）
+# 复制为 config/config.yaml 后按本机路径与账户元数据填写
+project: auto_ipo
+
+accounts:
+  - id: 账户备注名
+    display_name: 客户端显示名
+    broker: 券商名称
+    account_type: normal
+    enabled: true
+    permissions: [cb]
+    strategy: all
+
+strategy:
+  new_stock: all
+  convertible_bond: all
+  blacklist: []
+
+schedule:
+  calendar_fetch: "08:30"
+  subscribe_time: "10:00"
+  subscribe_window: ["09:30", "15:00"]
+  allotment_check_1: "22:00"
+  allotment_check_2: "08:00"
+
+notification:
+  channels: [serverchan]
+  email_fallback: false
+  skip_push_when_empty: true
+
+execution:
+  mode: dry_run
+  ths_account_switch:
+
+    hexin_path: 'E:\同花顺\同花顺\hexin.exe'
+    xiadan_path: 'E:\同花顺\同花顺\xiadan.exe'
+    max_ths_accounts: 10
+    max_fund_accounts_per_ths: 10
+    accounts:
+      - username: mx_example_1
+        enabled: true
+      - username: mx_example_2
+        enabled: false
+gui:
+  ths_account_switch:
+    dialog_wait_s: 5
+    restart_timeout_s: 60
+    login_wait_s: 60
+    login_click_verify_wait_s: 0.5
+    saved_password_checkbox_text: 保存密码
+    fund_login_result_wait_s: 15
+    fund_login_poll_interval_s: 0.5
+    post_dialog_result_wait_s: 5
+    post_dialog_poll_interval_s: 0.5
+    dropdown_attempts: 3
+    screenshot_on_failure: true
+  xiadan:
+    fund_account_control_id: 1711
+    account_combo_control_id: 2322
+  hexin_login:
+    button_template: runtime_data/tpl_account_btn.png
+    button_threshold: 0.8
+    button_band_height: 30
+    button_click_dx: 8
+    button_click_dy: 10
+    button_attempts: 3
+    menu_wait_s: 5
+    allow_coordinate_fallback: true   # 文本不可读时按实测菜单行点击；每行必须做账户身份复核
+    row_height: 26
+    row_first_offset: 19
+    row_x_offset: 116
+    login_wait_s: 15
+    post_click_wait_s: 3
+    dropdown_attempts: 5
+    dropdown_wait_s: 2
+    menu_read_attempts: 3
+    menu_read_retry_wait_s: 0.2
+    max_accounts: 10
+    close_login_dialog: true
+    login_dialog_title: 委托下单
+    login_dialog_keywords: [资金账号, 资金帐号, 交易密码, 验证码]
+    dialog_close_wait_s: 0.5
+
+  lifecycle:
+    close_after_task: true
+    close_preexisting: true
+    close_timeout_s: 15
+
+boot_login:
+  probe_url: "http://www.baidu.com"
+  network_timeout_s: 600
+
+catchup:
+  enabled: true
+  subscribe_skip_after: "15:00"
+  allotment_retry_interval_min: 30
+  allotment_keep_days: 3
+
+notification_receipts:
+  template_version: 2
+  send_login: true
+  send_subscribe: true
+  send_allotment: true
+

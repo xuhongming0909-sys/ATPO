@@ -2,7 +2,9 @@
 import json
 from pathlib import Path
 
-from data_fetch.calendar import parse_new_stock, parse_cb, fetch_calendar_for
+import pytest
+
+from data_fetch.calendar import parse_new_stock, parse_cb, fetch_calendar_for, _query
 
 FIX = Path(__file__).parent / "fixtures"
 
@@ -45,3 +47,40 @@ def test_fetch_calendar_for_separates_kinds():
     assert cal["day"] == day
     assert len(cal["new_stocks"]) == 1
     assert len(cal["cbs"]) == 1
+
+
+def test_empty_api_result_is_not_an_error(monkeypatch):
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"success": False, "result": None, "code": 9201, "message": "查询数据为空"}
+
+    monkeypatch.setattr("data_fetch.calendar.requests.get", lambda *_a, **_k: Response())
+    assert _query("RPTA_APP_IPOAPPLY", "APPLY_DATE", "2026-10-19") == []
+
+
+def test_real_api_failure_is_not_treated_as_empty_calendar(monkeypatch):
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"success": False, "result": None, "code": 500, "message": "服务异常"}
+
+    monkeypatch.setattr("data_fetch.calendar.requests.get", lambda *_a, **_k: Response())
+    with pytest.raises(RuntimeError, match="服务异常"):
+        _query("RPTA_APP_IPOAPPLY", "APPLY_DATE", "2026-10-19")
+def test_fetch_calendar_for_caches_per_day(monkeypatch):
+    import data_fetch.calendar as cal
+
+    cal._DAY_CACHE.clear()
+    calls = []
+    monkeypatch.setattr(cal, "fetch_new_stocks", lambda day: calls.append(("s", day)) or [])
+    monkeypatch.setattr(cal, "fetch_cbs", lambda day: calls.append(("c", day)) or [])
+    first = cal.fetch_calendar_for("2026-10-22")
+    second = cal.fetch_calendar_for("2026-10-22")
+    assert first is second
+    assert calls == [("s", "2026-10-22"), ("c", "2026-10-22")]
+    cal._DAY_CACHE.clear()

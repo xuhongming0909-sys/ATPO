@@ -18,7 +18,12 @@ def _query(report_name: str, date_field: str, day: str) -> list[dict]:
     resp = requests.get(BASE, params=params, timeout=TIMEOUT)
     resp.raise_for_status()
     payload = resp.json()
-    if not payload.get("success") or not payload.get("result"):
+    if not payload.get("success"):
+        message = str(payload.get("message") or "")
+        if payload.get("code") == 9201 or "数据为空" in message:
+            return []
+        raise RuntimeError(f"东方财富日历接口失败：{message or 'success=false'}")
+    if not payload.get("result"):
         return []
     return payload["result"].get("data") or []
 
@@ -63,11 +68,21 @@ def fetch_cbs(day: str) -> list[dict]:
     return [parse_cb(r) for r in _query("RPT_BOND_CB_LIST", "PUBLIC_START_DATE", day)]
 
 
+_DAY_CACHE: dict = {}
+
+
 def fetch_calendar_for(day: str, _fetchers: dict | None = None) -> dict:
-    """day: YYYY-MM-DD。_fetchers 仅测试注入用。"""
-    fetchers = _fetchers or {"new_stocks": fetch_new_stocks, "cbs": fetch_cbs}
-    return {
-        "day": day,
-        "new_stocks": fetchers["new_stocks"](day),
-        "cbs": fetchers["cbs"](day),
-    }
+    """day: YYYY-MM-DD。_fetchers 仅测试注入用。进程内按日缓存：一轮 15 户只抓一次。"""
+    if _fetchers is not None:
+        return {
+            "day": day,
+            "new_stocks": _fetchers["new_stocks"](day),
+            "cbs": _fetchers["cbs"](day),
+        }
+    if day not in _DAY_CACHE:
+        _DAY_CACHE[day] = {
+            "day": day,
+            "new_stocks": fetch_new_stocks(day),
+            "cbs": fetch_cbs(day),
+        }
+    return _DAY_CACHE[day]
