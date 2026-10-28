@@ -17,9 +17,16 @@
 - 已更新 `.gitignore`：加入 `.venv-test/`、`python311-32/`、`.pytest_cache/`。
 
 ## 结果
-部分完成：协作文档和本地基线已准备好；远程推送阻塞。
+完成：项目基线已推送到 `origin/main`，多 AI 协作文档已落地。
+
+## 验证结果（推送后）
+- `git remote -v`：`origin https://github.com/xuhongming0909-sys/ATPO.git`。
+- `git status --short --branch`：`## main...origin/main`。
+- `git rev-parse main`：`8a40ba136f5f16ef2685b69dc1a0e42c4be18a48`。
+- `git rev-parse origin/main`：`8a40ba136f5f16ef2685b69dc1a0e42c4be18a48`。
+- 本地与远程 `main` 一致；SSH 22 端口被拒后已切换 HTTPS 推送成功。
 
 ## 风险与遗留
-- Codex 自动审批组件故障：`git remote add`、`git add` 的提权请求均返回 `responses_feature_not_supported`，动作未执行。
-- 因 `.git/` 在沙箱内只读，未用户手动授权或审批恢复前，无法写 remote、暂存、提交、推送。
-- 工作区另有空临时文件 `date.today`（0 字节，其他 AI 产生），未纳入提交，留给其创建者清理。
+- 推送完成后，其他 AI 又修改 `execution/ipo_page.py`、`execution/subscribe.py`、`execution/ths_account_runner.py`；这些改动未纳入本次基线，按模块归属规则由对应 AI 处理。
+- 工作区仍有空临时文件 `date.today`（0 字节），未提交，留给创建者清理。
+- 本 mission 的后续文档更新（MEMORY/plan）需单独小提交，不得夹带其他 AI 的 `execution/` 改动。

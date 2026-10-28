@@ -4,6 +4,13 @@
 **只记录**：决策、有意义的动作、验证结果、值得记住的失败、下一步。
 **禁止**：倾倒完整对话。
 
+### 2026-10-28 | git 基线推送 + 多 AI 协作规则落地
+
+- **Action**: 远程切 HTTPS `https://github.com/xuhongming0909-sys/ATPO.git`；基线提交 `8a40ba1` 已推送 `origin/main`；新增 `docs/multi_ai_git_workflow.md`，更新 `INDEX.md`；`.gitignore` 增加 `.venv-test/`、`python311-32/`、`.pytest_cache/`。
+- **Verified**: `main == origin/main == 8a40ba1`；pytest `330 passed`；git 历史与工作区敏感扫描无真实凭据。
+- **Decision**: 多 AI 用独立 worktree + 分支 `ai/<agent>-<MMDD>-<topic>`；热点文件只由协调 AI 修改；禁止 force push、禁止直接改 `main`。
+- **Known**: SSH 22 端口被拒，远程已改 HTTPS；推送后其他 AI 又修改 `execution/` 三个文件（未提交），按模块归属规则处理。
+
 ### 2026-10-24 | 计划任务触发修复、一键打新弹窗、OCR worker、pytest 污染根治
 
 - **Root cause（周五零运行）**: 任务无 WakeToRun（PC 睡眠吞 22:00 检查）+ register_tasks.ps1 尾部 Write-Host 语法错误→重注册一直失败。已修；6 任务全部 WakeToRun=true；电源唤醒定时器 AC/DC=1；TaskScheduler/Operational 日志已启用。
@@ -128,13 +135,6 @@
 - **Action**: 4 个定时任务全部开启 StartWhenAvailable（错过计划时间开机即补跑）——防止电脑没开导致漏打新。
 - **Note**: 转债申购不冻结资金（中签才缴款）；窗口「可买不足」红色提示不影响申购委托。
 
-### 2026-10-15 深夜⑤ | 锁屏结论 + 双实例验证（20 户方案基础）
-
-- **Verified（证伪）**: 账户下拉无法用 Windows 消息驱动（CB_SETCURSEL/CBN_SELENDOK 只改显示不换上下文，资金账号不动），必须真实鼠标点行 → **锁屏不可行**。已配置不锁屏（屏保/锁定/睡眠全关），正确姿势=关显示器而非 Win+L。
-- **Verified**: 同花顺可双实例——E:\同花顺 克隆到 E:\同花顺2（1.1GB），两个 hexin.exe 进程同时运行互不干扰（各自独立配置目录）。已测完即关 hexin2，避免 F12 定位错客户端。
-- **20 户方案**：hexin2 退出当前同花顺账号、改登第二个手机号 → 各自 F12 拉各自 xiadan（每实例 10 户）→ config 账户加 client 分组字段，subscribe 按组用对应 xiadan_path。待用户需要时实施。
-- **Note**: hexin2 克隆时带走了 THS 账号 525378109 的登录态，启用前需在 hexin2 里换绑第二个手机号。
-
 ### 2026-10-15 深夜④ | 五轴评审 + 3 Critical 修复 + 死代码归档
 
 - **Review**: 子代理五轴评审结论 Request changes，3 Critical 全在首跑失败路径上，已全修：
@@ -257,24 +257,6 @@
 - **Verified**: M1 全链路本机跑通——pytest 5 passed；真实抓取东财日历（10-15 华纬转债 071380 / 10-16 中科转债 371175）；Server酱真实推送 3 条均送达；Windows 任务计划 `AutoIPO-DailyReport`（工作日 08:25）注册并手动触发验证成功，日志在 runtime_data/daily-report.log。
 - **Next**: M2 平安证券——安装同花顺下单客户端并确认能登录平安账户（关键验证点），easytrader 接入，dry_run 走通申购流程。
 - **Blocker**: 需用户提供平安账户在同花顺客户端的登录验证（需用户在场操作一次）；config/config.yaml 中 permissions 待用户核实填写。
-
-### 2026-10-15 | 通道与服务器验证通过 + 纯服务器方案评估
-
-- **Verified**: Server酱推送实测成功（pushid 61781931，errno 0）；SendKey 已存 config/secrets.yaml（git 忽略）。
-- **Verified**: SSH 到 43.139.35.190 成功（paramiko 密码认证，本机无 sshpass）。服务器状态：运行 140 天，alpha-monitor active，磁盘余 25G，内存余 2.5G，Python 3.12.3。SSH 凭据已存 secrets.yaml。
-- **Decision**: 纯服务器方案存在——S1 券商官方预约打新（平安/中信建投 APP 内有智能打新，券商端执行，零机器开机）；S2 Windows 云服务器跑 easytrader（月费百元级）。推荐 S1 为主路径，execution/ 降级为可选增强。待用户拍板 S1 vs S2。
-- **Next**: M1 每日打新提醒机器人开工（两条路径通用）；用户需在平安证券 APP 确认可转债权限 + 体验预约打新功能。
-
-### 2026-10-15 | 项目立项：需求与架构 v2 定稿
-
-- **Decision**: 形态定为「服务器+本机执行端」混合架构。服务器（腾讯云 43.139.35.190 Ubuntu）跑日历/调度/通知；券商客户端自动化只在本机 Windows 跑，密码不上服务器。
-- **Decision**: 首个接入券商 = 平安证券（走同花顺 PC 客户端 + easytrader）。
-- **Decision**: 通知通道 = Server酱（SendKey 待用户注册后填 config/secrets.yaml）。
-- **Decision**: 新股策略 = 全部申购（可转债同样全打），黑名单机制后续再加。
-- **Decision**: 项目规则借鉴 Alpha monitor：git 同步工作流、mission 制度、AI-SUMMARY、根目录清洁、1000 行文件上限、TDD、职责分离、配置集中、安全宪章（AGENTS.md Constitution §9）。
-- **Action**: 建立项目骨架（AGENTS/INDEX/MEMORY/README/specs/config/templates），git init。
-- **Next**: M1 每日打新提醒机器人（data_fetch 日历抓取 + notification Server酱 + scheduler 定时），部署到服务器 systemd。
-- **Blocker**: 需用户提供 Server酱 SendKey；服务器 SSH 凭据需用户提供或授权复用。
 
 ### 2026-10-17 | 双同花顺隔离 + 可复制性扩展完成
 
@@ -411,3 +393,9 @@
 - **许*鸣融（信用户）昨天下单未落**：系统侧 submitted_unverified（F8 无记录），用户查无记录。未完全定因——信用账户打新可能受限/需信用模块申购/菜单只显示普通户；明日钶锐锶实盘重点观察该户，也可能用户需在信用交易模块查记录。
 - 电脑影响：生产本就只有 10:00 申购 + 22:00 查签两次开 THS（各约5分钟）；昨日多次开同花顺是我测试所致，生产日不再。
 
+### 2026-10-28 | Microsoft UFO 适配评估：不接主链
+
+- **Decision**: 不把 Microsoft UFO/UFO³ Galaxy 接入打新主链；核心原因是 LLM 动态规划与实盘“恰好一次、结果不明禁止重试”冲突，且 UFO 官方明确截图会发模型、`SAFE_GUARD` 不是独立风控或沙箱。
+- **Fit**: 当前 32 位 `.venv32` + UIA/Win32/OCR + jqktrader 已覆盖本项目所需；UFO 依赖 `sentence-transformers` → `torch`，未找到 Win32/Python 3.11 wheel，直接放入 32 位执行端不可行。
+- **Optional**: 用户真实目标是自主研究风险与报错、减少重复教学；应做独立只读诊断 Agent：自动汇总 task_state/结果/日志/截图/doctor/diff/MEMORY，再由代码研究 Agent 查源码与资料、输出根因和补丁建议。UFO 仅适合隔离环境探索未知 GUI 弹窗，官方 Auto-Debugging Toolkit 仍在开发中。评估归档 `missions/1028-ufo-fit-analysis`。
+- **Caveat**: 当前未提交工作树中 `execution/subscribe.py` 第 2 行 BOM 导致部分测试收集失败；本次分析未改业务代码。
